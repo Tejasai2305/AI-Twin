@@ -1,7 +1,5 @@
-from unittest import result
-
 from fastapi import APIRouter
-from backend.services.memory_manager import process_memory
+
 from backend.models import question
 from backend.models.note import Note, NoteResponse
 from backend.models.question import Question
@@ -13,7 +11,7 @@ from backend.services.conversation_service import get_conversation_messages
 from backend.embeddings.vector_store import build_index
 from fastapi.responses import StreamingResponse
 from backend.ai.gemini_service import ask_gemini_stream
-from backend.ai.memory_extractor import extract_memory
+
 from backend.services.agent_pipeline import process_chat
 from backend.services import note_service
 from backend.services.router_service import classify_question
@@ -93,16 +91,20 @@ def ask_question(question: Question):
     # -----------------------------
     tool_result = process_request(question.question)
 
-    if tool_result is not None:
+    result = process_chat(question)
 
-        return {
-            "question": question.question,
-            "answer": str(tool_result["result"]["result"]),
-            "mode": "tool",
-            "sources": [],
-        }
-    from backend.services.pipeline.memory_stage import run_memory_stage
+    if result["handled"]:
 
+        tool_result = result["response"]
+
+        tool_result = result["response"]
+
+    return {
+        "question": question.question,
+        "answer": str(tool_result["result"]["result"]),
+        "mode": "tool",
+        "sources": [],
+    }
     # -----------------------------
     # Decide which context to use
     # -----------------------------
@@ -169,12 +171,12 @@ def ask_question(question: Question):
     }
 @router.post("/ask-stream")
 def ask_question_stream(question: Question):
-    # -----------------------------
-    # Agent Tool Check
-    # -----------------------------
-    tool_result = process_request(question.question)
 
-    if tool_result is not None:
+    result = process_chat(question)
+
+    if result["handled"]:
+
+        tool_result = result["response"]
 
         def generate():
             yield str(tool_result["result"]["result"])
@@ -183,6 +185,10 @@ def ask_question_stream(question: Question):
             generate(),
             media_type="text/plain",
         )
+
+    # -----------------------------
+    # Decide which context to use
+    # -----------------------------
     
     # -----------------------------
     # Decide which context to use

@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+
+# Virtual Environment
+venv/
+.env
+
+# Databases
+*.db
+*.sqlite3
+
+# FAISS / Embeddings
+*.faiss
+*.index
+*.pkl
+pdf_chunks.json
+
+# Uploads
+uploads/
+
+# Node
+node_modules/
+frontend/node_modules/
+
+# Build
+frontend/dist/
+frontend/build/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Cache
+.pytest_cache/
+
+# Models (if downloaded model files)
+/models/
+
+# OS
+.DS_Store
+Thumbs.db

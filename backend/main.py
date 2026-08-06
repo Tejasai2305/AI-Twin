@@ -1,0 +1,43 @@
+from fastapi import FastAPI
+from typing import Optional
+from backend.routers.conversations import router as conversations_router
+from fastapi.middleware.cors import CORSMiddleware
+from backend.embeddings.memory_vector_store import load_memory_index
+from backend.routers.notes import router as notes_router
+from backend.startup import initialize
+from backend.documents.upload import router as upload_router
+from backend.routers.memory import router as memory_router
+from backend.routers.memories import router as memories_router
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+from backend.services.memory_service import get_memories
+from backend.embeddings.memory_vector_store import (
+    build_memory_index,
+    load_memory_index,
+)
+
+@app.on_event("startup")
+def startup_event():
+    initialize()
+
+    build_memory_index(get_memories())
+    load_memory_index()
+
+    print("Memory FAISS rebuilt successfully.")
+
+app.include_router(notes_router)
+app.include_router(upload_router)
+app.include_router(conversations_router)
+app.include_router(memory_router)
+app.include_router(memories_router)
+@app.get("/")
+def home():
+    return {"message": "Welcome to AI Twin!"}

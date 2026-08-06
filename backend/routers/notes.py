@@ -193,14 +193,10 @@ def ask_question_stream(question: Question):
     # -----------------------------
     # Decide which context to use
     # -----------------------------
-    mode = classify_question(question.question)
+    state = result["state"]
 
-    # -----------------------------
-    # Retrieve conversation history
-    # -----------------------------
-    history = ""
-    if mode in ["conversation", "hybrid"]:
-        history = get_history(question.conversation_id)
+    mode = state.mode
+    history = state.history
 
     # -----------------------------
     # Generate title for first message

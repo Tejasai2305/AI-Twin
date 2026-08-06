@@ -213,10 +213,11 @@ def ask_question_stream(question: Question):
     # -----------------------------
     # Retrieve notes + PDF context
     # -----------------------------
-    notes_text, pdf_text, pdf_results = retrieve_context(
-        mode,
-        question.question,
-    )
+    state = result["state"]
+
+    notes_text = state.notes
+    pdf_text = state.pdf
+    pdf_results = state.pdf_results
 
     # -----------------------------
     # Build prompt

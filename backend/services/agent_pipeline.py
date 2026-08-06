@@ -1,4 +1,4 @@
-from backend.agent.controller import process_request
+from backend.services.pipeline.memory_stage import run_memory_stage
 
 
 def process_chat(question):
@@ -6,23 +6,9 @@ def process_chat(question):
     Main AI pipeline.
     """
 
-    # -----------------------------
-    # Tool Check
-    # -----------------------------
-    tool_result = process_request(question.question)
-
-    if tool_result is not None and tool_result["success"]:
-
-        return {
-            "handled": True,
-            "response": {
-                "question": question.question,
-                "answer": tool_result["result"],
-                "mode": "tool",
-                "sources": [],
-            },
-        }
+    # Stage 1
+    run_memory_stage(question)
 
     return {
-        "handled": False,
+        "handled": False
     }

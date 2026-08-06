@@ -101,16 +101,7 @@ def ask_question(question: Question):
             "mode": "tool",
             "sources": [],
         }
-    # -----------------------------
-    # Extract long-term memory
-    # -----------------------------
-    memory = extract_memory(question.question)
-    print("Memory Extractor Output:", memory)
-
-    if memory.get("remember"):
-        process_memory(memory["memory"])
-    else:
-        print("Nothing to remember.")
+    from backend.services.pipeline.memory_stage import run_memory_stage
 
     # -----------------------------
     # Decide which context to use
@@ -192,17 +183,7 @@ def ask_question_stream(question: Question):
             generate(),
             media_type="text/plain",
         )
-    # -----------------------------
-    # Extract long-term memory
-    # -----------------------------
-    memory = extract_memory(question.question)
-    print("Memory Extractor Output:", memory)
-
-    if memory.get("remember"):
-        process_memory(memory["memory"])
-    else:
-        print("Nothing to remember.")
-
+    
     # -----------------------------
     # Decide which context to use
     # -----------------------------

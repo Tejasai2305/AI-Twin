@@ -140,7 +140,9 @@ def ask_question(question: Question):
     # -----------------------------
     # Ask Gemini
     # -----------------------------
-    answer = ask_gemini(prompt)
+    state = result["state"]
+
+    answer = state.answer
 
     # -----------------------------
     # Save conversation
@@ -222,13 +224,9 @@ def ask_question_stream(question: Question):
     # -----------------------------
     # Build prompt
     # -----------------------------
-    prompt = build_prompt(
-        mode,
-        history,
-        notes_text,
-        pdf_text,
-        question.question,
-    )
+    state = result["state"]
+
+    prompt = state.prompt
 
     # -----------------------------
     # Stream Gemini response

@@ -3,8 +3,7 @@ from fastapi import APIRouter
 from backend.models import question
 from backend.models.note import Note, NoteResponse
 from backend.models.question import Question
-from backend.agent.controller import process_request
-from backend.ai.gemini_service import ask_gemini
+
 from backend.services.title_generator import generate_title
 from backend.services.title_service import update_conversation_title
 from backend.services.conversation_service import get_conversation_messages
@@ -14,11 +13,9 @@ from backend.ai.gemini_service import ask_gemini_stream
 
 from backend.services.agent_pipeline import process_chat
 from backend.services import note_service
-from backend.services.router_service import classify_question
-from backend.services.retrieval_service import retrieve_context
-from backend.services.prompt_builder import build_prompt
+
 from backend.services.conversation_service import (
-    get_history,
+    get_conversation_messages,
     save_message,
 )
 
@@ -82,10 +79,10 @@ def delete_note(id: int):
 
 @router.post("/ask")
 def ask_question(question: Question):
+
     result = process_chat(question)
 
-    if result["handled"]:
-        return result["response"]
+    return result["response"]
     # -----------------------------
     # Agent Tool Check
     # -----------------------------

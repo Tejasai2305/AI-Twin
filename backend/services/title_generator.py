@@ -1,7 +1,8 @@
+import os
 import re
-from google import genai
 
-client = genai.Client()
+from dotenv import load_dotenv
+from backend.ai.gemini_service import generate_content
 
 
 def generate_title(first_message: str):
@@ -100,15 +101,9 @@ User:
 """
 
     try:
-        response = client.models.generate_content(
-            model="gemini-2.5-flash-lite",
-            contents=prompt,
-        )
+        title = generate_content(prompt).strip()
 
-        if response.text:
-            title = response.text.strip()
-
-            if title:
+        if title:
                 print("AI Title:", title)
                 return title
 

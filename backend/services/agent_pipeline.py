@@ -5,6 +5,9 @@ from backend.services.pipeline.history_stage import run_history_stage
 from backend.services.pipeline.retrieval_stage import run_retrieval_stage
 from backend.services.pipeline.prompt_stage import run_prompt_stage
 from backend.services.pipeline.llm_stage import run_llm_stage
+from backend.services.pipeline.response_stage import build_response
+
+
 def process_chat(question):
 
     state = PipelineState(question=question)
@@ -23,12 +26,18 @@ def process_chat(question):
 
     # Stage 3
     state = run_history_stage(state)
+
+    # Stage 4
     state = run_retrieval_stage(state)
+
+    # Stage 5
     state = run_prompt_stage(state)
+
+    # Stage 6
     state = run_llm_stage(state)
+
     return {
         "handled": False,
         "state": state,
-    }
-    
-    
+        "response": build_response(state),
+    }   

@@ -53,3 +53,14 @@ def ask_gemini_stream(prompt):
             print("Gemini Error:", e)
             yield f"\n\nUnexpected error: {e}"
             return
+def generate_content(prompt: str):
+    """
+    Generate a non-streaming Gemini response.
+    """
+
+    response = client.models.generate_content(
+        model="gemini-3.1-flash-lite",
+        contents=prompt,
+    )
+
+    return response.text

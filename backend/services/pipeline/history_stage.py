@@ -8,17 +8,26 @@ def run_history_stage(state: PipelineState) -> PipelineState:
     Retrieves conversation history if needed.
     """
 
+    state.status = "Loading Conversation..."
+
     state.mode = classify_question(
         state.question.question,
     )
 
-    print(f"Mode: {state.mode}")
+    conversation_id = state.question.conversation_id
+
+    print("\n========== HISTORY DEBUG ==========")
+    print("Conversation ID:", conversation_id)
+    print("Question:", state.question.question)
+    print("Mode:", state.mode)
 
     if state.mode in ["conversation", "hybrid"]:
-        state.history = get_history(
-            state.question.conversation_id,
-        )
+        state.history = get_history(conversation_id)
     else:
         state.history = ""
+
+    print("History:")
+    print(repr(state.history))
+    print("===================================\n")
 
     return state

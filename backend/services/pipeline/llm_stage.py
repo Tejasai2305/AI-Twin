@@ -6,7 +6,7 @@ def run_llm_stage(state: PipelineState) -> PipelineState:
     """
     Sends the final prompt to Gemini.
     """
-
+    state.status = "✨ Generating Response..."
     state.answer = ask_gemini(
         state.prompt
     )

@@ -30,3 +30,5 @@ class PipelineState:
 
     # LLM
     answer: str = ""
+    # UI Status
+    status: str = ""

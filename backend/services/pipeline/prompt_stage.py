@@ -7,12 +7,14 @@ def run_prompt_stage(state: PipelineState) -> PipelineState:
     Builds the final prompt for the LLM.
     """
 
+    state.status = "Building prompt..."
+
     state.prompt = build_prompt(
-        state.mode,
-        state.history,
-        state.notes,
-        state.pdf,
-        state.question.question,
+        mode=state.mode,
+        history=state.history,
+        notes_text=state.notes,
+        pdf_text=state.pdf,
+        question=state.question.question,
     )
 
     return state

@@ -4,7 +4,8 @@ import ChatWindow from "./components/ChatWindow";
 import ChatInput from "./components/ChatInput";
 import MemoryPanel from "./components/MemoryPanel";
 import "./App.css";
-
+import Header from "./components/Header";
+import ToolStatus from "./components/ToolStatus";
 import {
   askQuestionStream,
   getConversation,
@@ -18,6 +19,9 @@ function App() {
   const [controller, setController] = useState(null);
 
   const [currentPage, setCurrentPage] = useState("chat");
+
+  // 👇 Add this here
+  const [toolStatus, setToolStatus] = useState("");
 
   const sidebarRef = useRef(null);
 
@@ -44,6 +48,7 @@ function App() {
 
     setController(abortController);
     setIsStreaming(true);
+    setToolStatus("Thinking...");
 
     setMessages((prev) => [
       ...prev,
@@ -77,13 +82,14 @@ function App() {
       );
 
       sidebarRef.current?.refresh();
-
+      setToolStatus("");
       setIsStreaming(false);
       setController(null);
 
     } catch (err) {
 
       if (err.name === "AbortError") {
+        setToolStatus("");
         setIsStreaming(false);
         setController(null);
         return;
@@ -123,9 +129,11 @@ function App() {
       />
 
       <div className="main">
+         <Header />
 
         {currentPage === "chat" ? (
           <>
+            <ToolStatus status={toolStatus} />
             <ChatWindow messages={messages} />
 
             <ChatInput

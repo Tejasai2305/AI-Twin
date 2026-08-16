@@ -25,6 +25,12 @@ def retrieve_context(mode: str, question: str):
 
     pdf_results = search_pdf(question)
 
+    print("\n========== NOTE RETRIEVAL ==========")
+    print("Question:", question)
+    print("Notes found:", notes)
+    print("PDF results:", pdf_results)
+    print("====================================\n")
+
     for result in pdf_results:
         pdf_text += (
             f"PDF: {result['filename']}\n"

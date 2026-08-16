@@ -55,6 +55,9 @@ def search_memory(query, top_k=3, threshold=1.0):
     print("Searching memory for:", query)
 
     if len(memory_list) == 0:
+        load_memory_index()
+
+    if len(memory_list) == 0:
         return []
 
     query_embedding = model.encode([query]).astype("float32")
@@ -66,5 +69,7 @@ def search_memory(query, top_k=3, threshold=1.0):
     for distance, idx in zip(distances[0], indices[0]):
         if idx < len(memory_list) and distance <= threshold:
             results.append(memory_list[idx])
+
+    print("Memory search results:", results)
 
     return results

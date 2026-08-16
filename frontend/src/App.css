@@ -78,13 +78,17 @@
 .ai-message {
   display: flex;
   justify-content: flex-start;
+  width: 100%;
   margin-bottom: 20px;
 }
 
 .bubble-user {
   background: #0b84ff;
   color: white;
+
+  width: fit-content;
   max-width: 70%;
+
   padding: 16px;
   border-radius: 14px;
   line-height: 1.6;
@@ -93,12 +97,17 @@
 .bubble-ai {
   background: #444654;
   color: white;
-  max-width: 70%;
+
+  width: 100%;
+  max-width: 900px;
+
   padding: 16px;
   border-radius: 14px;
   line-height: 1.6;
-}
 
+  box-sizing: border-box;
+  overflow-wrap: break-word;
+}
 /* ---------- Input ---------- */
 
 .chat-input {
@@ -131,4 +140,47 @@
 
 .chat-input button:hover {
   background: #15a56a;
+}
+.bubble-ai pre {
+    overflow-x: auto;
+    max-width: 100%;
+}
+
+.bubble-ai code {
+    white-space: pre;
+}
+
+.bubble-ai {
+    overflow-wrap: break-word;
+}
+.bubble-ai pre {
+  white-space: pre-wrap !important;
+  word-break: break-word;
+}
+
+.bubble-ai code {
+  white-space: pre-wrap !important;
+}
+.markdown-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  margin: 16px 0;
+}
+
+.markdown-table-wrapper table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+}
+
+.markdown-table-wrapper th,
+.markdown-table-wrapper td {
+  padding: 8px 12px;
+  border: 1px solid #666;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.markdown-table-wrapper th {
+  font-weight: 600;
 }

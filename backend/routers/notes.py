@@ -204,6 +204,12 @@ def ask_question_stream(question: Question):
 
     if len(messages) == 0:
         title = generate_title(question.question)
+        print("=" * 60)
+        print("QUESTION:")
+        print(repr(question.question))
+        print("TITLE:")
+        print(repr(title))
+        print("=" * 60)
         update_conversation_title(
             question.conversation_id,
             title,

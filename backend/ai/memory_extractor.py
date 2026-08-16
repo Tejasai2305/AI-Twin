@@ -6,28 +6,36 @@ MODEL = "gemini-3.1-flash-lite"
 
 def extract_memory(user_message):
     prompt = f"""
-You are an AI memory extractor.
+You are an AI long-term memory extractor.
 
-Your task is to decide whether the user's message contains long-term information that should be remembered.
+Your job is to decide whether the user's message contains information
+that is genuinely useful to remember across future conversations.
 
-Return ONLY valid JSON.
+Only store stable, long-term information about the user.
 
-The JSON MUST ALWAYS follow this exact schema:
+DO NOT store temporary, session-specific, or one-time information.
 
-If it should be remembered:
+NEVER remember:
+- passwords
+- PINs
+- OTPs
+- API keys
+- tokens
+- secret codes
+- temporary codes
+- test words
+- verification codes
+- one-time instructions
+- today's tasks
+- temporary tasks
+- temporary plans
+- meeting times
+- deadlines
+- short-lived project details
+- information explicitly described as temporary or secret
+- information that is only relevant to the current conversation
 
-{{
-    "remember": true,
-    "memory": "<one sentence describing the memory>"
-}}
-
-If it should NOT be remembered:
-
-{{
-    "remember": false
-}}
-
-Examples:
+Examples that SHOULD be remembered:
 
 User: My name is Teja.
 Output:
@@ -37,15 +45,59 @@ User: My favorite color is blue.
 Output:
 {{"remember": true, "memory": "User's favorite color is blue."}}
 
-User: I am a third-year ECE student.
+User: My favorite food is biryani.
 Output:
-{{"remember": true, "memory": "User is a third-year ECE student."}}
+{{"remember": true, "memory": "User's favorite food is biryani."}}
+
+User: I am working on a project called AQIVision.
+Output:
+{{"remember": true, "memory": "User is working on a project called AQIVision."}}
+
+Examples that MUST NOT be remembered:
+
+User: My temporary code is BLUE-729.
+Output:
+{{"remember": false}}
+
+User: My secret test word is ORANGE-123.
+Output:
+{{"remember": false}}
+
+User: The password for this session is abc123.
+Output:
+{{"remember": false}}
+
+User: Today's meeting is at 5 PM.
+Output:
+{{"remember": false}}
 
 User: I ate pizza today.
 Output:
 {{"remember": false}}
 
-User:
+User: Remind me to submit this tomorrow.
+Output:
+{{"remember": false}}
+
+Important:
+- When in doubt, do NOT remember the information.
+- Never store secrets or credentials.
+- Return ONLY valid JSON.
+- Do not add explanations.
+- The JSON MUST follow exactly one of these schemas:
+
+If it should be remembered:
+{{
+    "remember": true,
+    "memory": "<one sentence describing the stable information>"
+}}
+
+If it should NOT be remembered:
+{{
+    "remember": false
+}}
+
+User message:
 {user_message}
 """
 
@@ -57,26 +109,30 @@ User:
 
         text = response.text.strip()
 
-        # Remove markdown if Gemini returns ```json ... ```
+        # Remove markdown code fences if Gemini returns them
         if text.startswith("```"):
-            text = text.replace("```json", "").replace("```", "").strip()
+            text = text.replace("```json", "")
+            text = text.replace("```", "").strip()
 
         data = json.loads(text)
 
-        # Handle old/incorrect Gemini outputs
-        if "remember" not in data:
-            if "preferences" in data:
-                prefs = data["preferences"]
-
-                if "favorite_color" in prefs:
-                    return {
-                        "remember": True,
-                        "memory": f"User's favorite color is {prefs['favorite_color']}."
-                    }
-
+        if not isinstance(data, dict):
             return {"remember": False}
 
-        return data
+        # Validate remember field
+        if data.get("remember") is not True:
+            return {"remember": False}
+
+        # Memory must be present and non-empty
+        memory = data.get("memory")
+
+        if not isinstance(memory, str) or not memory.strip():
+            return {"remember": False}
+
+        return {
+            "remember": True,
+            "memory": memory.strip()
+        }
 
     except Exception as e:
         print("Memory extraction failed:", e)

@@ -70,26 +70,6 @@ def delete_memory(memory_id):
     conn.commit()
     conn.close()
     build_memory_index(get_memories())
-# -----------------------------
-# Update Importance
-# -----------------------------
-def update_memory(memory_id, memory, importance):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute(
-        """
-        UPDATE memories
-        SET memory=?, importance=?
-        WHERE id=?
-        """,
-        (memory, importance, memory_id),
-    )
-
-    conn.commit()
-    conn.close()
-
-    build_memory_index(get_memories())
 
 # -----------------------------
 # Memory Context

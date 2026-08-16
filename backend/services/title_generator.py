@@ -1,8 +1,6 @@
-import os
 import re
 
-from dotenv import load_dotenv
-from backend.ai.gemini_service import generate_content
+from backend.ai.gemini_service import ask_gemini
 
 
 def generate_title(first_message: str):
@@ -10,110 +8,143 @@ def generate_title(first_message: str):
     text = first_message.strip()
     lower = text.lower()
 
-    # -----------------------------
-    # Rule-based titles
-    # -----------------------------
+    # ----------------------------------------------------
+    # Rule-based titles (fast & accurate)
+    # ----------------------------------------------------
 
-        
-    import re
+    patterns = [
+        (r"favorite book is (.+)", lambda m: m.group(1).title()),
+        (r"favorite movie is (.+)", lambda m: m.group(1).title()),
+        (r"favorite color is (.+)", lambda m: m.group(1).title()),
+        (r"favorite food is (.+)", lambda m: m.group(1).title()),
+        (r"favorite city is (.+)", lambda m: m.group(1).title()),
+    ]
 
-    book_match = re.search(r"favorite book is (.+)", lower)
-    if book_match:
-        return book_match.group(1).title()
+    for pattern, func in patterns:
+        match = re.search(pattern, lower)
+        if match:
+            return func(match)
 
-    movie_match = re.search(r"favorite movie is (.+)", lower)
-    if movie_match:
-        return movie_match.group(1).title()
+    # ----------------------------------------------------
+    # Common question patterns
+    # ----------------------------------------------------
 
-    color_match = re.search(r"favorite color is (.+)", lower)
-    if color_match:
-        return color_match.group(1).title()
-    if lower.startswith("explain "):
-        return text.replace("Explain", "").strip()
+    prefixes = [
+        "what is ",
+        "who is ",
+        "how to ",
+        "explain ",
+        "tell me about ",
+        "describe ",
+        "learn ",
+    ]
 
-    if lower.startswith("what is "):
-        return text.replace("What is", "").replace("?", "").strip()
+    for prefix in prefixes:
+        if lower.startswith(prefix):
+            title = text[len(prefix):]
 
-    if lower.startswith("how to "):
-        return text.replace("How to", "").strip()
-    if "learn machine learning" in lower:
-        return "Machine Learning"
+            # remove common trailing phrases
+            title = re.sub(
+                r"\b(in detail|with examples|for beginners|tutorial|guide)\b",
+                "",
+                title,
+                flags=re.IGNORECASE,
+            )
 
-    if lower.startswith("what is "):
-        return text[8:].strip().title()
+            title = title.replace("?", "")
+            title = title.replace(".", "")
+            title = re.sub(r"\s+", " ", title).strip()
 
-    if lower.startswith("who is "):
-        return text[7:].strip().title()
+            # Keep only first two words
+            words = title.split()
+            if len(words) > 2:
+                title = " ".join(words[:2])
 
-    if lower.startswith("how to "):
-        return text[7:].strip().title()
+            return title.title()
 
-    if lower.startswith("explain "):
-        return text[8:].strip().title()
-
-    if lower.startswith("compare "):
-        return "Comparison"
-
-    # -----------------------------
+    # ----------------------------------------------------
     # Gemini fallback
-    # -----------------------------
+    # ----------------------------------------------------
 
     prompt = f"""
-You are an AI that generates chat titles.
+You generate chat titles.
 
-Your job is to extract the MAIN TOPIC from the user's message.
+Return ONLY the main topic.
 
 Rules:
-- Maximum 2 or 3 words.
-- Return only the topic.
-- Remove words like:
-  Explain
-  Tell me
-  What is
-  How to
-  I want to know
-  Algorithm
-  About
-- Prefer the important noun or entity.
+- Maximum 2 words.
+- No punctuation.
+- No markdown.
+- No quotes.
+- No explanation.
+- Ignore filler words like:
+Explain
+Describe
+Tell me
+What is
+How to
+In detail
+With examples
+Tutorial
+Guide
 
-Examples:
+Examples
 
-Explain Random Forest algorithm
--> Random Forest
+Explain Random Forest in detail with examples.
+Random Forest
 
 Tell me about FastAPI
--> FastAPI
-
-What is SQL?
--> SQL
+FastAPI
 
 How to learn Python?
--> Python
+Python
 
-My favorite movie is Interstellar
--> Interstellar
+What is SQL?
+SQL
 
-My favorite book is Atomic Habits
--> Atomic Habits
+Who invented Python?
+Python
 
-User:
+User message:
 {first_message}
+
+Title:
 """
 
     try:
-        title = generate_content(prompt).strip()
+
+        title = ask_gemini(prompt).strip()
+
+        # Keep only first line
+        title = title.splitlines()[0]
+
+        # Remove markdown
+        title = title.replace("#", "")
+        title = title.replace("*", "")
+        title = title.replace("`", "")
+        title = title.replace('"', "")
+        title = title.replace("'", "")
+
+        title = title.strip()
+
+        print("AI Title:", repr(title))
 
         if title:
-                print("AI Title:", title)
-                return title
+            return title
 
     except Exception as e:
         print("Title Generator:", e)
 
-    # -----------------------------
+    # ----------------------------------------------------
     # Final fallback
-    # -----------------------------
+    # ----------------------------------------------------
 
     words = re.findall(r"[A-Za-z0-9]+", text)
 
-    return " ".join(words[:3]) if words else "New Chat"
+    if len(words) >= 2:
+        return " ".join(words[:2]).title()
+
+    if len(words) == 1:
+        return words[0].title()
+
+    return "New Chat"

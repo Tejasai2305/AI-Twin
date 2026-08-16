@@ -6,7 +6,8 @@ function ChatWindow({ messages }) {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({
-      behavior: "smooth",
+      behavior: "auto",
+      block: "end",
     });
   }, [messages]);
 

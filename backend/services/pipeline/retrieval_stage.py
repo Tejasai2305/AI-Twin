@@ -6,7 +6,7 @@ def run_retrieval_stage(state: PipelineState) -> PipelineState:
     """
     Retrieves notes and PDF context.
     """
-
+    state.status = "📄 Searching Knowledge..."
     notes_text, pdf_text, pdf_results = retrieve_context(
         state.mode,
         state.question.question,

@@ -74,18 +74,13 @@ def detect_tool(user_message: str):
     # -----------------------------
 
     prompt = f"""
-{TOOL_PROMPT}
+    {TOOL_PROMPT}
 
-User:
-{user_message}
-"""
+    User:
+    {user_message}
+    """
 
-    prompt = f"""
-{TOOL_PROMPT}
-
-User:
-{user_message}
-"""
+   
 
     response = ask_gemini(prompt)
 

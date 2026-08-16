@@ -7,7 +7,7 @@ from backend.routers.notes import router as notes_router
 from backend.startup import initialize
 from backend.documents.upload import router as upload_router
 from backend.routers.memory import router as memory_router
-from backend.routers.memories import router as memories_router
+
 app = FastAPI()
 
 app.add_middleware(
@@ -37,7 +37,6 @@ app.include_router(notes_router)
 app.include_router(upload_router)
 app.include_router(conversations_router)
 app.include_router(memory_router)
-app.include_router(memories_router)
 @app.get("/")
 def home():
     return {"message": "Welcome to AI Twin!"}

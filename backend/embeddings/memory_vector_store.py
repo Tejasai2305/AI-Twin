@@ -58,7 +58,7 @@ def load_memory_index():
             memory_list = pickle.load(f)
 
 
-def search_memory(query, top_k=3, threshold=1.0):
+def search_memory(query, top_k=3, threshold=1.5):
     print("Searching memory for:", query)
 
     if len(memory_list) == 0:
@@ -72,13 +72,84 @@ def search_memory(query, top_k=3, threshold=1.0):
         dtype="float32",
     )
 
-    distances, indices = index.search(query_embedding, top_k)
+    # Retrieve more candidates than we ultimately return.
+    candidate_k = min(10, len(memory_list))
 
-    results = []
+    distances, indices = index.search(
+        query_embedding,
+        candidate_k,
+    )
+
+    query_words = set(
+        query.lower().replace("?", "").replace(".", "").split()
+    )
+
+    # Words that are too generic to help identify a memory.
+    stop_words = {
+        "what",
+        "which",
+        "who",
+        "where",
+        "when",
+        "why",
+        "how",
+        "does",
+        "do",
+        "did",
+        "is",
+        "are",
+        "the",
+        "a",
+        "an",
+        "my",
+        "me",
+        "i",
+        "user",
+        "like",
+        "prefer",
+        "favorite",
+    }
+
+    query_keywords = query_words - stop_words
+
+    scored_results = []
 
     for distance, idx in zip(distances[0], indices[0]):
-        if idx < len(memory_list) and distance <= threshold:
-            results.append(memory_list[idx])
+
+        if idx < 0 or idx >= len(memory_list):
+            continue
+
+        if distance > threshold:
+            continue
+
+        memory = memory_list[idx]
+
+        memory_words = set(
+            memory.lower().replace("?", "").replace(".", "").split()
+        )
+
+        keyword_overlap = len(query_keywords & memory_words)
+
+        if query_keywords and keyword_overlap == 0:
+            continue
+
+        score = float(distance) - (keyword_overlap * 0.25)
+
+        scored_results.append(
+            (
+                score,
+                float(distance),
+                keyword_overlap,
+                memory,
+            )
+        )
+
+    scored_results.sort(key=lambda x: x[0])
+
+    results = [
+        memory
+        for _, _, _, memory in scored_results[:top_k]
+    ]
 
     print("Memory search results:", results)
 

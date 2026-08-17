@@ -1,9 +1,18 @@
 import sqlite3
+import os
 from pathlib import Path
 
 from backend.embeddings.memory_vector_store import build_memory_index
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-DB_NAME = BASE_DIR / "notes.db"
+
+DATA_DIR = Path(
+    os.getenv("AI_TWIN_DATA_DIR", str(BASE_DIR))
+)
+
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+DB_NAME = DATA_DIR / "notes.db"
 
 
 def get_connection():

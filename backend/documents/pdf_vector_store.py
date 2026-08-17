@@ -2,7 +2,18 @@ import faiss
 import os
 import json
 import numpy as np
+from pathlib import Path
 from backend.embeddings.embedding_service import create_embedding
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+DATA_DIR = Path(
+    os.getenv("AI_TWIN_DATA_DIR", str(BASE_DIR))
+)
+
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+PDF_INDEX_PATH = DATA_DIR / "pdf_index.faiss"
+PDF_CHUNKS_PATH = DATA_DIR / "pdf_chunks.json"
 
 pdf_chunks = []
 pdf_index = None
@@ -36,9 +47,9 @@ def build_pdf_index(chunks, filename):
 
     pdf_index.add(embeddings)
 
-    faiss.write_index(pdf_index, "pdf_index.faiss")
+    faiss.write_index(pdf_index, str(PDF_INDEX_PATH))
 
-    with open("pdf_chunks.json", "w") as f:
+    with open(PDF_CHUNKS_PATH, "w") as f:
         json.dump(pdf_chunks, f, indent=4)
 
 def search_pdf(query, k=3):
@@ -66,11 +77,11 @@ def search_pdf(query, k=3):
 def load_pdf_index():
     global pdf_index, pdf_chunks
 
-    if os.path.exists("pdf_index.faiss"):
-        pdf_index = faiss.read_index("pdf_index.faiss")
+    if PDF_INDEX_PATH.exists():
+        pdf_index = faiss.read_index(str(PDF_INDEX_PATH))
 
-        if os.path.exists("pdf_chunks.json"):
-            with open("pdf_chunks.json", "r") as f:
+        if PDF_CHUNKS_PATH.exists():
+            with open(PDF_CHUNKS_PATH, "r") as f:
                 pdf_chunks = json.load(f)
 
         print("PDF FAISS index loaded successfully.")

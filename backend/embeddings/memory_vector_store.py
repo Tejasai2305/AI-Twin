@@ -1,25 +1,27 @@
-from sentence_transformers import SentenceTransformer
 import faiss
 import numpy as np
 import pickle
 from pathlib import Path
 
+from backend.embeddings.embedding_service import (
+    create_embedding,
+    EMBEDDING_DIMENSION,
+)
 
-model = SentenceTransformer("all-MiniLM-L6-v2")
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 INDEX_PATH = BASE_DIR / "memory.index"
 MEMORY_PATH = BASE_DIR / "memory.pkl"
 
-index = faiss.IndexFlatL2(384)
+index = faiss.IndexFlatL2(EMBEDDING_DIMENSION)
 memory_list = []
 
 
 def build_memory_index(memories):
     global index, memory_list
 
-    index = faiss.IndexFlatL2(384)
+    index = faiss.IndexFlatL2(EMBEDDING_DIMENSION)
     memory_list = []
 
     if not memories:
@@ -27,13 +29,18 @@ def build_memory_index(memories):
 
     texts = [memory for _, memory, _ in memories]
 
-    embeddings = model.encode(texts).astype("float32")
+    embeddings = np.array(
+        [create_embedding(text) for text in texts],
+        dtype="float32",
+    )
 
     index.add(embeddings)
 
     memory_list = texts
+
     print("Memory index rebuilt.")
     print("Indexed memories:", memory_list)
+
     faiss.write_index(index, str(INDEX_PATH))
 
     with open(MEMORY_PATH, "wb") as f:
@@ -60,7 +67,10 @@ def search_memory(query, top_k=3, threshold=1.0):
     if len(memory_list) == 0:
         return []
 
-    query_embedding = model.encode([query]).astype("float32")
+    query_embedding = np.array(
+        [create_embedding(query)],
+        dtype="float32",
+    )
 
     distances, indices = index.search(query_embedding, top_k)
 

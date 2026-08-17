@@ -7,3 +7,4 @@ faiss-cpu==1.14.3
 PyMuPDF==1.28.0
 numpy==2.2.6
 tavily-python==0.7.27
+python-multipart

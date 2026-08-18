@@ -45,3 +45,6 @@ app.include_router(memory_router)
 @app.get("/")
 def home():
     return {"message": "Welcome to AI Twin!"}
+@app.get("/healthz")
+def healthz():
+    return {"status": "ok"}

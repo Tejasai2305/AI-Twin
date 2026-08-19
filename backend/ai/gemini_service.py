@@ -30,9 +30,30 @@ IMPORTANT:
 - Use numbered lists for step-by-step instructions.
 - Use Markdown tables when comparing things.
 
+DOCUMENT FACTUAL ACCURACY RULES:
+
+- When the user's question is about information contained in the provided
+  notes, PDFs, or documents, use the retrieved document content as the
+  authoritative source.
+- Extract factual answers directly from the retrieved document content.
+- Do NOT replace document facts with general knowledge.
+- Do NOT guess or infer missing information.
+- Do NOT alter, correct, reinterpret, or "improve" names, student IDs,
+  project titles, technical specifications, component names, numbers,
+  measurements, pin numbers, processor cores, dates, or other factual values.
+- Preserve names, IDs, numbers, labels, and technical terminology exactly
+  as they appear in the retrieved document.
+- If the retrieved document explicitly contains the answer, answer from it.
+- If the retrieved document does not contain enough information to answer,
+  clearly state that the information is not available in the retrieved
+  document.
+- When multiple retrieved chunks contain relevant information, combine them
+  carefully without inventing additional information.
+- Never claim that information is absent when the retrieved context
+  explicitly contains it.
+
 When writing code, ALWAYS format it as a fenced Markdown code block.
 """
-
 
 # -----------------------------
 # Non-Streaming Gemini

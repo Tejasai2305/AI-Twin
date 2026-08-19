@@ -158,7 +158,45 @@ RELEVANT NOTES:
 RELEVANT PDF CONTENT:
 {pdf_text}
 
-Use notes and PDFs when they directly support the question.
+Use the retrieved notes and PDF content as the primary source
+for questions about those documents.
+
+DOCUMENT EXTRACTION RULES:
+
+- When the user asks about information contained in a PDF, answer
+  directly from the retrieved PDF content.
+- Do not use general knowledge to replace information found in the PDF.
+- Do not invent, omit, or substitute names, numbers, IDs, dates, or
+  other explicitly stated values.
+- When the user asks for ALL items, list ALL items explicitly supported
+  by the retrieved PDF content.
+- When the user asks for a count, count the explicitly listed items
+  in the retrieved PDF content.
+- Preserve names and identifiers exactly as they appear in the PDF.
+- If the retrieved PDF content contains conflicting information,
+  explicitly mention the conflict instead of choosing one arbitrarily.
+- If the retrieved PDF content does not contain enough information to
+  answer completely, say what information is missing.
+- Do not claim that information is absent if it is present in the
+  retrieved PDF content.
+
+For example, if the PDF explicitly lists four project members,
+and the user asks for all project members, return all four members.
+Do not summarize the list as three members and do not invent a
+different member.
+
+Example:
+PDF:
+"K. Rithik Sai [RA2311004020017], D. Jayanth [RA2311004020015],
+G. Sai Teja [RA2311004020018] and K. Sasank [RA2311004020009]"
+
+Question:
+"List all the members of my minor project team with their names and
+student IDs."
+
+Correct behavior:
+Return all four names and their corresponding student IDs exactly
+as supported by the PDF.
 
 Example:
 

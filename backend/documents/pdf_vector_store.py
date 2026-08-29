@@ -22,43 +22,14 @@ pdf_chunks = []
 pdf_index = None
 
 
-def build_pdf_index(chunks, filename):
-    global pdf_chunks, pdf_index
+def _save_index():
+    global pdf_index, pdf_chunks
 
-    # Create fresh index for the uploaded PDF
-    chunk_data = []
-
-    for i, chunk in enumerate(chunks, start=1):
-        chunk_data.append({
-            "filename": filename,
-            "chunk_id": i,
-            "chunk": chunk
-        })
-
-    pdf_chunks = chunk_data
-
-    embeddings = [
-        create_embedding(item["chunk"])
-        for item in pdf_chunks
-    ]
-
-    embeddings = np.array(embeddings).astype("float32")
-
-    if len(embeddings) == 0:
-        pdf_index = None
-        return
-
-    dimension = embeddings.shape[1]
-
-    # Always create a fresh FAISS index
-    pdf_index = faiss.IndexFlatL2(dimension)
-
-    pdf_index.add(embeddings)
-
-    faiss.write_index(
-        pdf_index,
-        str(PDF_INDEX_PATH)
-    )
+    if pdf_index is not None:
+        faiss.write_index(
+            pdf_index,
+            str(PDF_INDEX_PATH)
+        )
 
     with open(PDF_CHUNKS_PATH, "w", encoding="utf-8") as f:
         json.dump(
@@ -68,12 +39,110 @@ def build_pdf_index(chunks, filename):
             ensure_ascii=False
         )
 
-    print(
-        f"PDF index built successfully: "
-        f"{len(pdf_chunks)} chunks from {filename}"
+
+def build_pdf_index(
+    chunks,
+    filename,
+    conversation_id
+):
+    """
+    Add PDF chunks to the persistent global FAISS index.
+
+    Every chunk stores its conversation_id so retrieval can
+    later restrict results to the current conversation.
+    """
+
+    global pdf_chunks, pdf_index
+
+    if not chunks:
+        return
+
+    # --------------------------------------------------------
+    # Create metadata for this PDF
+    # --------------------------------------------------------
+
+    new_chunks = []
+
+    for i, chunk in enumerate(chunks, start=1):
+        new_chunks.append({
+            "conversation_id": conversation_id,
+            "filename": filename,
+            "chunk_id": i,
+            "chunk": chunk,
+        })
+
+    # --------------------------------------------------------
+    # Create embeddings
+    # --------------------------------------------------------
+
+    embeddings = [
+        create_embedding(item["chunk"])
+        for item in new_chunks
+    ]
+
+    embeddings = np.array(
+        embeddings,
+        dtype="float32"
     )
 
-def search_pdf(query, k=5):
+    if len(embeddings) == 0:
+        return
+
+    # --------------------------------------------------------
+    # Create or load FAISS index
+    # --------------------------------------------------------
+
+    if pdf_index is None:
+        if PDF_INDEX_PATH.exists():
+            try:
+                pdf_index = faiss.read_index(
+                    str(PDF_INDEX_PATH)
+                )
+            except Exception:
+                pdf_index = None
+
+    if pdf_index is None:
+        dimension = embeddings.shape[1]
+
+        pdf_index = faiss.IndexFlatL2(
+            dimension
+        )
+
+    # --------------------------------------------------------
+    # Append embeddings
+    # --------------------------------------------------------
+
+    pdf_index.add(embeddings)
+
+    # --------------------------------------------------------
+    # Append metadata
+    # --------------------------------------------------------
+
+    pdf_chunks.extend(new_chunks)
+
+    # --------------------------------------------------------
+    # Save
+    # --------------------------------------------------------
+
+    _save_index()
+
+    print(
+        f"PDF index updated successfully: "
+        f"{len(new_chunks)} chunks from {filename} "
+        f"for conversation {conversation_id}"
+    )
+
+
+def search_pdf(
+    query,
+    conversation_id,
+    k=5
+):
+    """
+    Search PDF chunks belonging only to the specified
+    conversation.
+    """
+
     global pdf_chunks, pdf_index
 
     if pdf_index is None or not pdf_chunks:
@@ -82,17 +151,30 @@ def search_pdf(query, k=5):
     if pdf_index is None or not pdf_chunks:
         return []
 
+    # --------------------------------------------------------
+    # Create query embedding
+    # --------------------------------------------------------
+
     query_embedding = create_embedding(query)
 
     query_embedding = np.array(
-        [query_embedding]
-    ).astype("float32")
+        [query_embedding],
+        dtype="float32"
+    )
 
-    k = min(k, len(pdf_chunks))
+    # --------------------------------------------------------
+    # Search more candidates than requested because the
+    # first FAISS results may belong to other conversations.
+    # --------------------------------------------------------
+
+    search_k = min(
+        max(k * 10, 50),
+        len(pdf_chunks)
+    )
 
     _, indices = pdf_index.search(
         query_embedding,
-        k
+        search_k
     )
 
     results = []
@@ -102,13 +184,29 @@ def search_pdf(query, k=5):
         if index < 0:
             continue
 
-        if index < len(pdf_chunks):
+        if index >= len(pdf_chunks):
+            continue
 
-            results.append({
-                "filename": pdf_chunks[index]["filename"],
-                "chunk_id": pdf_chunks[index]["chunk_id"],
-                "chunk": pdf_chunks[index]["chunk"]
-            })
+        item = pdf_chunks[index]
+
+        # ----------------------------------------------------
+        # Conversation isolation
+        # ----------------------------------------------------
+
+        if item.get("conversation_id") != conversation_id:
+            continue
+
+        results.append({
+            "conversation_id": item.get(
+                "conversation_id"
+            ),
+            "filename": item["filename"],
+            "chunk_id": item["chunk_id"],
+            "chunk": item["chunk"],
+        })
+
+        if len(results) >= k:
+            break
 
     return results
 
@@ -116,8 +214,14 @@ def search_pdf(query, k=5):
 def load_pdf_index():
     global pdf_index, pdf_chunks
 
-    if PDF_INDEX_PATH.exists():
+    if not PDF_INDEX_PATH.exists():
+        pdf_index = None
+        pdf_chunks = []
 
+        print("No saved PDF index found.")
+        return
+
+    try:
         pdf_index = faiss.read_index(
             str(PDF_INDEX_PATH)
         )
@@ -132,14 +236,20 @@ def load_pdf_index():
 
                 pdf_chunks = json.load(f)
 
+        else:
+            pdf_chunks = []
+
         print(
             f"PDF FAISS index loaded successfully: "
             f"{len(pdf_chunks)} chunks"
         )
 
-    else:
+    except Exception as e:
+
+        print(
+            "Failed to load PDF FAISS index:",
+            e
+        )
 
         pdf_index = None
         pdf_chunks = []
-
-        print("No saved PDF index found.")

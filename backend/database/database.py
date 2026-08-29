@@ -55,6 +55,17 @@ def create_table():
         importance INTEGER DEFAULT 5
     )
     """)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS attachments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        conversation_id INTEGER NOT NULL,
+        filename TEXT NOT NULL,
+        file_path TEXT NOT NULL,
+        file_type TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (conversation_id) REFERENCES conversations(id)
+    )
+    """)
 
     conn.commit()
     conn.close()

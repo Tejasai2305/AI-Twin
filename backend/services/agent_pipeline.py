@@ -8,11 +8,14 @@ from backend.services.pipeline.llm_stage import run_llm_stage
 from backend.services.pipeline.response_stage import build_response
 
 
-def process_chat(question):
+def process_chat(question, generate_answer=True):
 
     state = PipelineState(question=question)
 
-    # Stage 1
+    # -----------------------------
+    # Stage 1 - Tools
+    # -----------------------------
+
     state = run_tool_stage(state)
 
     if state.handled:
@@ -21,23 +24,39 @@ def process_chat(question):
             "response": state.tool_result,
         }
 
-    # Stage 2
+    # -----------------------------
+    # Stage 2 - Memory
+    # -----------------------------
+
     state = run_memory_stage(state)
 
-    # Stage 3
+    # -----------------------------
+    # Stage 3 - Conversation History
+    # -----------------------------
+
     state = run_history_stage(state)
 
-    # Stage 4
+    # -----------------------------
+    # Stage 4 - Document Retrieval
+    # -----------------------------
+
     state = run_retrieval_stage(state)
 
-    # Stage 5
+    # -----------------------------
+    # Stage 5 - Prompt Construction
+    # -----------------------------
+
     state = run_prompt_stage(state)
 
-    # Stage 6
-    state = run_llm_stage(state)
+    # -----------------------------
+    # Stage 6 - LLM
+    # -----------------------------
+
+    if generate_answer:
+        state = run_llm_stage(state)
 
     return {
         "handled": False,
         "state": state,
         "response": build_response(state),
-    }   
+    }

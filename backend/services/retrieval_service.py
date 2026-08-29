@@ -11,7 +11,6 @@ def build_pdf_queries(question: str):
 
     q = question.lower()
 
-    # Team members / student IDs
     if any(word in q for word in [
         "team",
         "member",
@@ -25,7 +24,6 @@ def build_pdf_queries(question: str):
             "List all project team members with their names and student IDs"
         )
 
-    # Supervisor
     if any(word in q for word in [
         "supervisor",
         "guide",
@@ -36,7 +34,6 @@ def build_pdf_queries(question: str):
             "Who is the project supervisor or project guide?"
         )
 
-    # Project title
     if any(word in q for word in [
         "title",
         "project title",
@@ -46,7 +43,6 @@ def build_pdf_queries(question: str):
             "What is the exact title of the project?"
         )
 
-    # Microcontroller
     if any(word in q for word in [
         "microcontroller",
         "controller",
@@ -57,28 +53,48 @@ def build_pdf_queries(question: str):
             "Which microcontroller or controller is used in the project?"
         )
 
-    # Remove duplicate queries
-    return list(dict.fromkeys(queries))
+    return list(
+        dict.fromkeys(queries)
+    )
 
 
-def retrieve_context(mode: str, question: str):
+def retrieve_context(
+    mode: str,
+    question: str,
+    conversation_id: int
+):
     """
     Returns:
-        notes_text, pdf_text, pdf_results
+
+        notes_text,
+        pdf_text,
+        pdf_results
+
+    PDF retrieval is restricted to the current
+    conversation.
     """
 
     notes_text = ""
     pdf_text = ""
     pdf_results = []
 
-    if mode not in ["knowledge", "hybrid"]:
-        return notes_text, pdf_text, pdf_results
+    if mode not in [
+        "knowledge",
+        "hybrid"
+    ]:
+        return (
+            notes_text,
+            pdf_text,
+            pdf_results
+        )
 
-    # -----------------------------
+    # --------------------------------------------------------
     # NOTE RETRIEVAL
-    # -----------------------------
+    # --------------------------------------------------------
 
-    notes = note_service.search_notes(question)
+    notes = note_service.search_notes(
+        question
+    )
 
     for note in notes:
         notes_text += (
@@ -86,21 +102,28 @@ def retrieve_context(mode: str, question: str):
             f"Content: {note['content']}\n\n"
         )
 
-    # -----------------------------
+    # --------------------------------------------------------
     # PDF RETRIEVAL
-    # -----------------------------
+    # --------------------------------------------------------
 
-    pdf_queries = build_pdf_queries(question)
+    pdf_queries = build_pdf_queries(
+        question
+    )
 
     seen_chunks = set()
 
     for query in pdf_queries:
 
-        results = search_pdf(query, k=5)
+        results = search_pdf(
+            query,
+            conversation_id=conversation_id,
+            k=5
+        )
 
         for result in results:
 
             chunk_key = (
+                result["conversation_id"],
                 result["filename"],
                 result["chunk_id"]
             )
@@ -108,25 +131,55 @@ def retrieve_context(mode: str, question: str):
             if chunk_key in seen_chunks:
                 continue
 
-            seen_chunks.add(chunk_key)
-            pdf_results.append(result)
+            seen_chunks.add(
+                chunk_key
+            )
 
-    print("\n========== NOTE RETRIEVAL ==========")
-    print("Question:", question)
-    print("Notes found:", notes)
-    print("PDF queries:", pdf_queries)
-    print("PDF results:", pdf_results)
-    print("====================================\n")
+            pdf_results.append(
+                result
+            )
 
-    # -----------------------------
+    print(
+        "\n========== NOTE RETRIEVAL =========="
+    )
+    print(
+        "Conversation ID:",
+        conversation_id
+    )
+    print(
+        "Question:",
+        question
+    )
+    print(
+        "Notes found:",
+        notes
+    )
+    print(
+        "PDF queries:",
+        pdf_queries
+    )
+    print(
+        "PDF results:",
+        pdf_results
+    )
+    print(
+        "====================================\n"
+    )
+
+    # --------------------------------------------------------
     # BUILD PDF CONTEXT
-    # -----------------------------
+    # --------------------------------------------------------
 
     for result in pdf_results:
+
         pdf_text += (
             f"PDF: {result['filename']}\n"
             f"Chunk ID: {result['chunk_id']}\n"
             f"Content: {result['chunk']}\n\n"
         )
 
-    return notes_text, pdf_text, pdf_results
+    return (
+        notes_text,
+        pdf_text,
+        pdf_results
+    )

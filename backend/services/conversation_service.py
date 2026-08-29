@@ -27,13 +27,21 @@ def get_history(conversation_id: int) -> str:
     return history
 
 
-def save_message(conversation_id: int, role: str, content: str):
+def save_message(
+    conversation_id: int,
+    role: str,
+    content: str
+):
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute(
         """
-        INSERT INTO messages (conversation_id, role, content)
+        INSERT INTO messages (
+            conversation_id,
+            role,
+            content
+        )
         VALUES (?, ?, ?)
         """,
         (
@@ -43,8 +51,14 @@ def save_message(conversation_id: int, role: str, content: str):
         )
     )
 
+    message_id = cursor.lastrowid
+
     conn.commit()
     conn.close()
+
+    return message_id
+
+
 def get_conversation_messages(conversation_id: int):
     conn = get_connection()
     cursor = conn.cursor()

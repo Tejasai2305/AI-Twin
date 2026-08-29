@@ -19,18 +19,25 @@ def build_prompt(
     # Search relevant long-term memories
     # --------------------------------------------------
 
-    relevant_memories = search_memory(
-        question,
-        top_k=2,
-    )
+    # Knowledge/document questions must NOT use global memory.
+    # This prevents information from another document or conversation
+    # from leaking into the current document-based answer.
 
-    if relevant_memories:
-        memory_text = "\n".join(
-            f"- {memory}"
-            for memory in relevant_memories
-        )
-    else:
+    if mode == "knowledge":
         memory_text = "None"
+    else:
+        relevant_memories = search_memory(
+            question,
+            top_k=2,
+        )
+
+        if relevant_memories:
+            memory_text = "\n".join(
+                f"- {memory}"
+                for memory in relevant_memories
+            )
+        else:
+            memory_text = "None"
 
     print("\nRelevant Memories:")
     print(memory_text)
@@ -63,7 +70,7 @@ GROUNDING RULES:
 
 - Retrieved notes, PDFs, memories, and conversation history are
   supporting context, not automatically correct answers.
-- Use retrieved context when it is directly relevant.
+- Use retrieved context only when it is directly relevant.
 - Do not assume two different terms refer to the same thing.
 - Do not combine unrelated pieces of context to manufacture an answer.
 - Never infer a secret code, password, identifier, or other specific
@@ -76,14 +83,13 @@ PRIVATE INFORMATION RULE:
   explicitly supported by the relevant context.
 - If a user-specific answer is not available in the context,
   clearly say that the information is not available.
-- Do not guess private information.
+- Do not guess.
 
 GENERAL KNOWLEDGE RULE:
 
-- For ordinary general-knowledge questions, use your general knowledge
-  when the retrieved context does not contain the answer.
-- Do not refuse a normal factual question simply because it is absent
-  from the notes or PDFs.
+- For ordinary general-knowledge questions, use general knowledge
+  when appropriate.
+- Do not use unrelated personal information to answer a question.
 """
 
     # --------------------------------------------------
@@ -125,7 +131,7 @@ You are an intelligent AI assistant.
 CONVERSATION HISTORY:
 {history}
 
-Use conversation history when it is relevant.
+Use conversation history when it is directly relevant.
 
 If the question is an ordinary general-knowledge question and
 conversation history does not contain the answer, use general knowledge.
@@ -158,66 +164,62 @@ RELEVANT NOTES:
 RELEVANT PDF CONTENT:
 {pdf_text}
 
-Use the retrieved notes and PDF content as the primary source
-for questions about those documents.
+DOCUMENT GROUNDING RULES:
 
-DOCUMENT EXTRACTION RULES:
-
-- When the user asks about information contained in a PDF, answer
-  directly from the retrieved PDF content.
-- Do not use general knowledge to replace information found in the PDF.
-- Do not invent, omit, or substitute names, numbers, IDs, dates, or
+- For questions about the current document, use the retrieved PDF
+  content as the primary and authoritative source.
+- Do NOT use long-term memory to fill missing information.
+- Do NOT use information from unrelated documents or conversations.
+- Do NOT substitute information from the user's resume for information
+  missing from the current PDF.
+- Do NOT invent, omit, or substitute names, numbers, IDs, dates, or
   other explicitly stated values.
 - When the user asks for ALL items, list ALL items explicitly supported
   by the retrieved PDF content.
 - When the user asks for a count, count the explicitly listed items
   in the retrieved PDF content.
 - Preserve names and identifiers exactly as they appear in the PDF.
-- If the retrieved PDF content contains conflicting information,
-  explicitly mention the conflict instead of choosing one arbitrarily.
-- If the retrieved PDF content does not contain enough information to
-  answer completely, say what information is missing.
-- Do not claim that information is absent if it is present in the
-  retrieved PDF content.
+- If the PDF does not contain enough information to answer completely,
+  clearly state what information is missing.
+- If the requested information is not present in the retrieved PDF
+  content, say that it is not available in the current document.
+- Do not use unrelated memory or previous-document information to
+  complete the answer.
 
-For example, if the PDF explicitly lists four project members,
-and the user asks for all project members, return all four members.
-Do not summarize the list as three members and do not invent a
-different member.
+For example:
 
-Example:
 PDF:
-"K. Rithik Sai [RA2311004020017], D. Jayanth [RA2311004020015],
-G. Sai Teja [RA2311004020018] and K. Sasank [RA2311004020009]"
+"K. Rithik Sai [RA2311004020017],
+D. Jayanth [RA2311004020015],
+G. Sai Teja [RA2311004020018] and
+K. Sasank [RA2311004020009]"
 
 Question:
-"List all the members of my minor project team with their names and
-student IDs."
+"List all the members of my minor project team with their names
+and student IDs."
 
 Correct behavior:
 Return all four names and their corresponding student IDs exactly
 as supported by the PDF.
 
-Example:
+IMPORTANT:
 
-Context:
-"The secret project code name is Falcon-Blue-729."
+If the current PDF contains project information but does not contain
+the user's technical skills, do NOT retrieve technical skills from
+long-term memory or another document.
+
+For example:
+
+Current PDF:
+"Compact Embedded Monitoring System for Industrial Hazard Detection"
 
 Question:
-"What is my temporary secret code?"
+"What are my technical skills?"
 
-Do NOT conclude that the temporary secret code is Falcon-Blue-729.
-Those are different concepts unless the context explicitly says
-they are the same.
+Correct behavior:
+Say that the technical skills are not available in the current PDF.
 
-If the question is an ordinary general-knowledge question and the
-documents do not contain the answer, use general knowledge.
-
-If the question asks for private, personal, secret, temporary, or
-user-specific information and the documents do not explicitly
-support the answer, say that the information is not available.
-
-Do not manufacture private information.
+Do not answer with technical skills found in the user's resume.
 
 LATEST QUESTION:
 {question}
@@ -247,49 +249,42 @@ RELEVANT NOTES:
 RELEVANT PDF CONTENT:
 {pdf_text}
 
-Use only context that is relevant to the user's question.
+Use only context that is directly relevant to the user's question.
 
-Priority:
+PRIORITY:
 
-1. Relevant conversation history
-2. Relevant long-term memory
-3. Relevant notes
-4. Relevant PDF content
+1. Relevant PDF content
+2. Relevant notes
+3. Relevant conversation history
+4. Relevant long-term memory
 5. General knowledge
 
 IMPORTANT:
 
-The priority above does NOT mean that unrelated context should be
-used.
-
-Do not infer that two different identifiers, codes, names, projects,
-or concepts are the same merely because they are similar.
-
-For example:
-
-Context:
-"The secret project code name is Falcon-Blue-729."
-
-Question:
-"What is my temporary secret code?"
-
-Correct behavior:
-Do NOT answer Falcon-Blue-729 unless the context explicitly states
-that it is also the temporary secret code.
+- The priority does NOT mean unrelated context should be used.
+- Never use unrelated long-term memory to answer a document-specific
+  question.
+- Never use information from another document to answer a question
+  about the current document.
+- If the current PDF does not contain the requested information, say
+  that it is not available in the current PDF.
+- Do not fill missing document information using memories from other
+  conversations or documents.
+- Do not infer that two different identifiers, codes, names, projects,
+  or concepts are the same merely because they are similar.
 
 For ordinary factual questions such as:
 
 "What is the capital of France?"
 
-answer using general knowledge even if the answer is not present in
-the retrieved notes, PDFs, memories, or conversation history.
+use general knowledge when appropriate.
 
 For private, personal, secret, temporary, or user-specific questions,
-only answer when the relevant information is explicitly supported
-by the available context.
+only answer when the relevant information is explicitly supported by
+the available context.
 
-If such private information is not available, say that it is not
-available instead of guessing.
+If such information is not available, say that it is not available
+instead of guessing.
 
 LATEST QUESTION:
 {question}

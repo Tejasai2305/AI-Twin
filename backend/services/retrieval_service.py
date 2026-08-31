@@ -4,12 +4,65 @@ from backend.documents.pdf_vector_store import search_pdf
 
 def build_pdf_queries(question: str):
     """
-    Build multiple targeted PDF queries for complex questions.
+    Build a small number of targeted PDF queries.
+
+    The goal is to support different phrasings of the same
+    document question without making many embedding/API calls.
     """
+
+    q = question.lower().strip()
 
     queries = [question]
 
-    q = question.lower()
+    # --------------------------------------------------------
+    # Resume / project questions
+    # --------------------------------------------------------
+
+    project_terms = [
+        "project",
+        "projects",
+        "built",
+        "build",
+        "worked on",
+        "developed",
+        "development",
+        "listed",
+        "mentioned",
+    ]
+
+    resume_terms = [
+        "resume",
+        "cv",
+        "curriculum vitae",
+    ]
+
+    is_project_question = any(
+        term in q for term in project_terms
+    )
+
+    is_resume_question = any(
+        term in q for term in resume_terms
+    )
+
+    if is_project_question and is_resume_question:
+        # Keep this canonical query because it was already
+        # proven to retrieve the correct resume project chunk.
+        queries.append(
+            "What projects did I build according to my resume?"
+        )
+
+    # --------------------------------------------------------
+    # Generic project questions
+    # --------------------------------------------------------
+
+    elif is_project_question:
+        queries.append(
+            "projects and project descriptions"
+        )
+
+    # --------------------------------------------------------
+    # Team members
+    # --------------------------------------------------------
 
     if any(word in q for word in [
         "team",
@@ -18,11 +71,14 @@ def build_pdf_queries(question: str):
         "student id",
         "student ids",
         "students",
-        "names",
     ]):
         queries.append(
             "List all project team members with their names and student IDs"
         )
+
+    # --------------------------------------------------------
+    # Supervisor / guide
+    # --------------------------------------------------------
 
     if any(word in q for word in [
         "supervisor",
@@ -34,6 +90,10 @@ def build_pdf_queries(question: str):
             "Who is the project supervisor or project guide?"
         )
 
+    # --------------------------------------------------------
+    # Project title
+    # --------------------------------------------------------
+
     if any(word in q for word in [
         "title",
         "project title",
@@ -42,6 +102,10 @@ def build_pdf_queries(question: str):
         queries.append(
             "What is the exact title of the project?"
         )
+
+    # --------------------------------------------------------
+    # Microcontroller / hardware
+    # --------------------------------------------------------
 
     if any(word in q for word in [
         "microcontroller",
@@ -53,9 +117,61 @@ def build_pdf_queries(question: str):
             "Which microcontroller or controller is used in the project?"
         )
 
-    return list(
-        dict.fromkeys(queries)
-    )
+    # --------------------------------------------------------
+    # Skills
+    # --------------------------------------------------------
+
+    if any(word in q for word in [
+        "skill",
+        "skills",
+        "technical skill",
+        "technical skills",
+        "programming language",
+        "programming languages",
+        "framework",
+        "frameworks",
+    ]):
+        queries.append(
+            "technical skills programming languages frameworks libraries"
+        )
+
+    # --------------------------------------------------------
+    # Internship / experience
+    # --------------------------------------------------------
+
+    if any(word in q for word in [
+        "internship",
+        "internships",
+        "experience",
+        "job",
+        "work experience",
+    ]):
+        queries.append(
+            "internships and work experience"
+        )
+
+    # --------------------------------------------------------
+    # Education
+    # --------------------------------------------------------
+
+    if any(word in q for word in [
+        "education",
+        "degree",
+        "college",
+        "university",
+        "cgpa",
+        "percentage",
+        "marks",
+    ]):
+        queries.append(
+            "education degree college CGPA percentage"
+        )
+
+    # --------------------------------------------------------
+    # Remove duplicates while preserving order
+    # --------------------------------------------------------
+
+    return list(dict.fromkeys(queries))
 
 
 def retrieve_context(
@@ -64,19 +180,18 @@ def retrieve_context(
     conversation_id: int
 ):
     """
-    Returns:
+    Retrieve notes and PDF context for the current question.
 
-        notes_text,
-        pdf_text,
-        pdf_results
-
-    PDF retrieval is restricted to the current
-    conversation.
+    PDF retrieval is restricted to the current conversation.
     """
 
     notes_text = ""
     pdf_text = ""
     pdf_results = []
+
+    # --------------------------------------------------------
+    # Only knowledge/hybrid modes require retrieval
+    # --------------------------------------------------------
 
     if mode not in [
         "knowledge",
@@ -139,29 +254,39 @@ def retrieve_context(
                 result
             )
 
+    # --------------------------------------------------------
+    # DEBUG OUTPUT
+    # --------------------------------------------------------
+
     print(
         "\n========== NOTE RETRIEVAL =========="
     )
+
     print(
         "Conversation ID:",
         conversation_id
     )
+
     print(
         "Question:",
         question
     )
+
     print(
         "Notes found:",
         notes
     )
+
     print(
         "PDF queries:",
         pdf_queries
     )
+
     print(
         "PDF results:",
         pdf_results
     )
+
     print(
         "====================================\n"
     )

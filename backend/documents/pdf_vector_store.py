@@ -58,6 +58,13 @@ def build_pdf_index(
         return
 
     # --------------------------------------------------------
+    # Ensure existing index and metadata are loaded together
+    # --------------------------------------------------------
+
+    if pdf_index is None:
+        load_pdf_index()
+
+    # --------------------------------------------------------
     # Create metadata for this PDF
     # --------------------------------------------------------
 
@@ -89,17 +96,8 @@ def build_pdf_index(
         return
 
     # --------------------------------------------------------
-    # Create or load FAISS index
+    # Create FAISS index if one does not exist
     # --------------------------------------------------------
-
-    if pdf_index is None:
-        if PDF_INDEX_PATH.exists():
-            try:
-                pdf_index = faiss.read_index(
-                    str(PDF_INDEX_PATH)
-                )
-            except Exception:
-                pdf_index = None
 
     if pdf_index is None:
         dimension = embeddings.shape[1]
@@ -131,7 +129,21 @@ def build_pdf_index(
         f"{len(new_chunks)} chunks from {filename} "
         f"for conversation {conversation_id}"
     )
+def validate_pdf_index():
+    global pdf_index, pdf_chunks
 
+    if pdf_index is None:
+        return False
+
+    if pdf_index.ntotal != len(pdf_chunks):
+        print(
+            "WARNING: PDF index mismatch:",
+            f"FAISS vectors={pdf_index.ntotal},",
+            f"metadata chunks={len(pdf_chunks)}"
+        )
+        return False
+
+    return True
 
 def search_pdf(
     query,
@@ -243,7 +255,7 @@ def load_pdf_index():
             f"PDF FAISS index loaded successfully: "
             f"{len(pdf_chunks)} chunks"
         )
-
+        validate_pdf_index()
     except Exception as e:
 
         print(

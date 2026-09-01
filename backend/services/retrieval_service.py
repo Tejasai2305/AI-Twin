@@ -4,10 +4,10 @@ from backend.documents.pdf_vector_store import search_pdf
 
 def build_pdf_queries(question: str):
     """
-    Build a small number of targeted PDF queries.
+    Build targeted PDF queries for document retrieval.
 
-    The goal is to support different phrasings of the same
-    document question without making many embedding/API calls.
+    Multiple queries are used for questions where the answer may
+    span several document chunks.
     """
 
     q = question.lower().strip()
@@ -45,15 +45,9 @@ def build_pdf_queries(question: str):
     )
 
     if is_project_question and is_resume_question:
-        # Keep this canonical query because it was already
-        # proven to retrieve the correct resume project chunk.
         queries.append(
             "What projects did I build according to my resume?"
         )
-
-    # --------------------------------------------------------
-    # Generic project questions
-    # --------------------------------------------------------
 
     elif is_project_question:
         queries.append(
@@ -139,16 +133,29 @@ def build_pdf_queries(question: str):
     # Internship / experience
     # --------------------------------------------------------
 
-    if any(word in q for word in [
-        "internship",
-        "internships",
-        "experience",
-        "job",
-        "work experience",
-    ]):
+    internship_question = any(
+        word in q
+        for word in [
+            "internship",
+            "internships",
+            "intern",
+            "experience",
+            "job",
+            "work experience",
+        ]
+    )
+
+    if internship_question:
         queries.append(
-            "internships and work experience"
+            "internships work experience companies roles dates"
         )
+
+        # For resume questions, explicitly target the experience
+        # section because it may span multiple chunks.
+        if is_resume_question:
+            queries.append(
+                "Experience Internships Machine Learning Intern Web Development Intern Frontend Developer Intern"
+            )
 
     # --------------------------------------------------------
     # Education

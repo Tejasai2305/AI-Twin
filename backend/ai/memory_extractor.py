@@ -1,7 +1,6 @@
 import json
-from backend.ai.gemini import client
 
-MODEL = "gemini-3.1-flash-lite"
+from backend.ai.gemini_service import ask_gemini
 
 
 def extract_memory(user_message):
@@ -102,12 +101,7 @@ User message:
 """
 
     try:
-        response = client.models.generate_content(
-            model=MODEL,
-            contents=prompt,
-        )
-
-        text = response.text.strip()
+        text = ask_gemini(prompt).strip()
 
         # Remove markdown code fences if Gemini returns them
         if text.startswith("```"):

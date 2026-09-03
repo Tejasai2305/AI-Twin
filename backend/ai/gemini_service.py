@@ -1,7 +1,6 @@
-from email.mime import text
 import os
 import time
-import json
+
 
 from dotenv import load_dotenv
 from google import genai
@@ -59,9 +58,17 @@ When writing code, ALWAYS format it as a fenced Markdown code block.
 # Non-Streaming Gemini
 # -----------------------------
 def ask_gemini(prompt):
+    start_time = time.perf_counter()
+
     response = client.models.generate_content(
         model="gemini-3.1-flash-lite",
         contents=prompt + "\n\n" + FORMATTING_RULES,
+    )
+
+    elapsed = time.perf_counter() - start_time
+
+    print(
+        f"\nGemini response time: {elapsed:.2f} seconds"
     )
 
     print("\n========== RAW GEMINI ==========")
@@ -69,7 +76,6 @@ def ask_gemini(prompt):
     print("================================\n")
 
     return response.text
-
 
 # -----------------------------
 # Streaming Gemini

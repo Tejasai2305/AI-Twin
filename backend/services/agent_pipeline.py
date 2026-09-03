@@ -6,11 +6,20 @@ from backend.services.pipeline.retrieval_stage import run_retrieval_stage
 from backend.services.pipeline.prompt_stage import run_prompt_stage
 from backend.services.pipeline.llm_stage import run_llm_stage
 from backend.services.pipeline.response_stage import build_response
+from backend.services.router_service import classify_question
 
 
 def process_chat(question, generate_answer=True):
 
     state = PipelineState(question=question)
+
+    # -----------------------------
+    # Stage 0 - Question Classification
+    # -----------------------------
+
+    state.mode = classify_question(
+        question.question
+    )
 
     # -----------------------------
     # Stage 1 - Tools

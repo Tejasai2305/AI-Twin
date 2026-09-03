@@ -241,7 +241,7 @@ def retrieve_context(
         results = search_pdf(
             query,
             conversation_id=conversation_id,
-            k=5
+            k=3 
         )
 
         for result in results:

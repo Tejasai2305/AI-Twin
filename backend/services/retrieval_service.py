@@ -150,12 +150,14 @@ def build_pdf_queries(question: str):
             "internships work experience companies roles dates"
         )
 
-        # For resume questions, explicitly target the experience
-        # section because it may span multiple chunks.
+        # For resume questions, explicitly target the complete
+        # experience section.
         if is_resume_question:
-            queries.append(
-                "Experience Internships Machine Learning Intern Web Development Intern Frontend Developer Intern"
-            )
+            queries.extend([
+                "Experience Internships",
+                "Machine Learning Intern Web Development Intern Frontend Developer Intern",
+                "companies roles internship dates experience",
+            ])
 
     # --------------------------------------------------------
     # Education

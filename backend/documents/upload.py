@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Form
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 import os
 from pathlib import Path
 
@@ -44,9 +44,28 @@ async def upload_pdf(
     # Extract text
     # --------------------------------------------------------
 
-    text = extract_text_from_pdf(
-        file_path
-    )
+    try:
+        text = extract_text_from_pdf(file_path)
+    except ValueError as e:
+        # Remove invalid uploaded file
+        if file_path.exists():
+            file_path.unlink()
+
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
+
+    except Exception as e:
+        print("Unexpected PDF upload error:", e)
+
+        if file_path.exists():
+            file_path.unlink()
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to process the uploaded PDF."
+        )
 
     # --------------------------------------------------------
     # Split into chunks

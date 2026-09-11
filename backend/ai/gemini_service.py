@@ -4,7 +4,7 @@ import time
 
 from dotenv import load_dotenv
 from google import genai
-from google.genai.errors import ServerError
+from google.genai.errors import ServerError, ClientError
 
 # -----------------------------
 # Load Environment Variables
@@ -101,27 +101,44 @@ def ask_gemini_stream(prompt):
                     text = text.replace("```cpp", "\n```cpp")
                     text = text.replace("```c", "\n```c")
 
-                    yield   text
+                    yield text
 
             return
 
-        except ServerError as e:
-            print(
-                f"Gemini ServerError (attempt {attempt + 1}/{max_retries}): {e}"
-            )
+        except (ServerError, ClientError) as e:
+            error_text = str(e)
 
-            if attempt == max_retries - 1:
+            # Retry temporary server errors and rate limits
+            if "429" in error_text or "503" in error_text:
+                wait_time = 2 ** attempt
+
+                print(
+                    f"Gemini temporary error "
+                    f"(attempt {attempt + 1}/{max_retries}): {e}"
+                )
+
+                if attempt == max_retries - 1:
+                    yield (
+                        "\n\nSorry, the AI service is temporarily unavailable. "
+                        "Please try again in a few moments."
+                    )
+                    return
+
+                print(f"Retrying in {wait_time} seconds...")
+                time.sleep(wait_time)
+
+            else:
+                print("Gemini API error:", e)
                 yield (
-                    "\n\nSorry, the AI service is temporarily unavailable. "
-                    "Please try again in a few moments."
+                    "\n\nSorry, I couldn't process the request right now. "
+                    "Please try again."
                 )
                 return
 
-            time.sleep(2)
-
         except Exception as e:
-            print("Gemini Error:", e)
-            yield f"\n\nUnexpected error: {e}"
+            print("Unexpected Gemini error:", e)
+            yield (
+                "\n\nSorry, something went wrong while generating the response. "
+                "Please try again."
+            )
             return
-
-

@@ -30,12 +30,47 @@ async def upload_pdf(
     file: UploadFile = File(...),
     conversation_id: int = Form(...)
 ):
+    conn = get_connection()
+    cursor = conn.cursor()
 
+    cursor.execute(
+        "SELECT id FROM conversations WHERE id = ?",
+        (conversation_id,),
+    )
+
+    conversation = cursor.fetchone()
+    conn.close()
+
+    if conversation is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Conversation not found.",
+        )
+
+    # filename validation continues here...
+    # --------------------------------------------------------
+    # Validate uploaded filename
+    # --------------------------------------------------------
+
+    safe_filename = Path(file.filename or "").name
+
+    if not safe_filename:
+        raise HTTPException(
+            status_code=400,
+            detail="A valid filename is required."
+        )
+
+    if not safe_filename.lower().endswith(".pdf"):
+        raise HTTPException(
+            status_code=400,
+            detail="Only PDF files are allowed."
+    
+        )
     # --------------------------------------------------------
     # Save uploaded file
     # --------------------------------------------------------
 
-    file_path = UPLOAD_FOLDER / file.filename
+    file_path = UPLOAD_FOLDER / safe_filename
 
     with open(file_path, "wb") as f:
         f.write(await file.read())
@@ -79,7 +114,7 @@ async def upload_pdf(
 
     build_pdf_index(
         chunks,
-        file.filename,
+        safe_filename,
         conversation_id
     )
 
@@ -101,10 +136,12 @@ async def upload_pdf(
         VALUES (?, ?, ?, ?)
         """,
         (
-            conversation_id,
-            file.filename,
-            str(file_path),
-            file.content_type,
+            (
+                conversation_id,
+                safe_filename,
+                str(file_path),
+                file.content_type,
+            )
         ),
     )
 
@@ -120,8 +157,9 @@ async def upload_pdf(
 
     return {
         "message": "PDF uploaded successfully",
-        "filename": file.filename,
+        "filename": safe_filename,
         "chunks": len(chunks),
         "attachment_id": attachment_id,
         "conversation_id": conversation_id,
     }
+    

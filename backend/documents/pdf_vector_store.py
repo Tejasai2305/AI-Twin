@@ -265,3 +265,68 @@ def load_pdf_index():
 
         pdf_index = None
         pdf_chunks = []
+
+
+def remove_pdf_chunks(filename, conversation_id):
+    """
+    Remove all chunks belonging to a specific PDF and conversation
+    from the persistent FAISS index and metadata.
+    """
+
+    global pdf_chunks, pdf_index
+
+    if pdf_index is None:
+        load_pdf_index()
+
+    if pdf_index is None or not pdf_chunks:
+        return 0
+
+    # Find metadata entries that should be removed
+    remove_indices = [
+        i
+        for i, item in enumerate(pdf_chunks)
+        if item.get("filename") == filename
+        and item.get("conversation_id") == conversation_id
+    ]
+
+    if not remove_indices:
+        return 0
+
+    remove_set = set(remove_indices)
+
+    # Keep all metadata except the selected entries
+    remaining_chunks = [
+        item
+        for i, item in enumerate(pdf_chunks)
+        if i not in remove_set
+    ]
+
+    # Rebuild FAISS index from remaining chunks
+    if remaining_chunks:
+        embeddings = np.array(
+            [
+                create_embedding(item["chunk"])
+                for item in remaining_chunks
+            ],
+            dtype="float32"
+        )
+
+        dimension = embeddings.shape[1]
+
+        new_index = faiss.IndexFlatL2(dimension)
+        new_index.add(embeddings)
+
+        pdf_index = new_index
+    else:
+        pdf_index = None
+
+    pdf_chunks = remaining_chunks
+
+    _save_index()
+
+    print(
+        f"Removed {len(remove_indices)} PDF chunks "
+        f"from {filename} for conversation {conversation_id}"
+    )
+
+    return len(remove_indices)

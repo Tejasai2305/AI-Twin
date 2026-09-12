@@ -708,7 +708,19 @@ def regenerate_response(
 
     state = result["state"]
 
-    prompt = state.prompt
+    prompt = state.prompt + """
+
+    REGENERATION INSTRUCTION:
+
+    Generate a fresh alternative response to the user's question.
+
+    - Do not intentionally repeat the previous answer word-for-word.
+    - Keep all factual information consistent with the available context.
+    - For document-based questions, preserve the exact names, numbers,
+    dates, identifiers, and other factual values from the document.
+    - You may change the wording, structure, explanation, or examples.
+    - Do not invent new facts just to make the response different.
+    """
 
     def generate():
 

@@ -1,8 +1,8 @@
 import os
 from pathlib import Path
+from backend.database.database import get_connection
+from backend.embeddings.memory_vector_store import build_memory_index
 
-from backend.embeddings.memory_vector_store import build_memory_index
-from backend.embeddings.memory_vector_store import build_memory_index
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 DATA_DIR = Path(

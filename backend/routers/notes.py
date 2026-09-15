@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from backend.models.note import Note, NoteResponse
 from backend.models.question import Question
@@ -53,17 +53,15 @@ def validate_conversation_exists(conversation_id: int):
 # REQUEST MODELS
 # ============================================================
 
-
 class RegenerateRequest(BaseModel):
-    conversation_id: int
-    assistant_message_id: int
+    conversation_id: int = Field(..., ge=1)
+    assistant_message_id: int = Field(..., ge=1)
 
 
 class EditMessageRequest(BaseModel):
-    conversation_id: int
-    user_message_id: int
-    question: str
-
+    conversation_id: int = Field(..., ge=1)
+    user_message_id: int = Field(..., ge=1)
+    question: str = Field(..., min_length=1, max_length=10000)
 
 # ============================================================
 # NOTES APIs

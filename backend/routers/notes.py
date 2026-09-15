@@ -26,6 +26,30 @@ router = APIRouter()
 
 
 # ============================================================
+# CONVERSATION VALIDATION
+# ============================================================
+
+
+def validate_conversation_exists(conversation_id: int):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT id FROM conversations WHERE id = ?",
+        (conversation_id,),
+    )
+
+    conversation = cursor.fetchone()
+    conn.close()
+
+    if conversation is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Conversation not found.",
+        )
+
+
+# ============================================================
 # REQUEST MODELS
 # ============================================================
 
@@ -34,10 +58,13 @@ class RegenerateRequest(BaseModel):
     conversation_id: int
     assistant_message_id: int
 
+
 class EditMessageRequest(BaseModel):
     conversation_id: int
     user_message_id: int
     question: str
+
+
 # ============================================================
 # NOTES APIs
 # ============================================================
@@ -261,6 +288,7 @@ def update_existing_assistant_message(
             detail="Assistant message could not be updated."
         )
 
+
 def get_message_for_edit(
     conversation_id: int,
     user_message_id: int,
@@ -293,6 +321,7 @@ def get_message_for_edit(
     user_row = cursor.fetchone()
 
     if not user_row:
+
         conn.close()
 
         raise HTTPException(
@@ -301,6 +330,7 @@ def get_message_for_edit(
         )
 
     if user_row[1] != "user":
+
         conn.close()
 
         raise HTTPException(
@@ -380,6 +410,8 @@ def update_existing_user_message(
             status_code=404,
             detail="User message could not be updated."
         )
+
+
 # ============================================================
 # NORMAL AI CHAT
 # ============================================================
@@ -387,6 +419,8 @@ def update_existing_user_message(
 
 @router.post("/ask")
 def ask_question(question: Question):
+
+    validate_conversation_exists(question.conversation_id)
 
     result = process_chat(
         question
@@ -479,6 +513,8 @@ def ask_question(question: Question):
 def ask_question_stream(
     question: Question
 ):
+
+    validate_conversation_exists(question.conversation_id)
 
     # --------------------------------------------------------
     # Run pipeline without calling Gemini
@@ -575,7 +611,7 @@ def ask_question_stream(
 
     attach_pending_files_to_message(
         question.conversation_id,
-        user_message_id,
+        user_message_id
     )
 
     # --------------------------------------------------------
@@ -717,7 +753,7 @@ def regenerate_response(
     - Do not intentionally repeat the previous answer word-for-word.
     - Keep all factual information consistent with the available context.
     - For document-based questions, preserve the exact names, numbers,
-    dates, identifiers, and other factual values from the document.
+      dates, identifiers, and other factual values from the document.
     - You may change the wording, structure, explanation, or examples.
     - Do not invent new facts just to make the response different.
     """
@@ -760,6 +796,8 @@ def regenerate_response(
         generate(),
         media_type="text/plain",
     )
+
+
 # ============================================================
 # EDIT USER MESSAGE AND REGENERATE RESPONSE
 # ============================================================

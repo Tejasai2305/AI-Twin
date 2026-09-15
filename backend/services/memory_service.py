@@ -1,9 +1,8 @@
-import sqlite3
 import os
 from pathlib import Path
 
 from backend.embeddings.memory_vector_store import build_memory_index
-
+from backend.embeddings.memory_vector_store import build_memory_index
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 DATA_DIR = Path(
@@ -14,9 +13,6 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 DB_NAME = DATA_DIR / "notes.db"
 
-
-def get_connection():
-    return sqlite3.connect(DB_NAME)
 # -----------------------------
 # Add Memory
 # -----------------------------

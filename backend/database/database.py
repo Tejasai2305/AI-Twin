@@ -14,7 +14,14 @@ DB_NAME = DATA_DIR / "notes.db"
 
 
 def get_connection():
-    return sqlite3.connect(DB_NAME)
+    conn = sqlite3.connect(
+        DB_NAME,
+        timeout=10
+    )
+
+    conn.execute("PRAGMA foreign_keys = ON")
+
+    return conn
 
 
 def create_table():

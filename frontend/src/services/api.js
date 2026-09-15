@@ -162,9 +162,16 @@ export const askQuestionStream = async (
   }
 
 
+  const remaining = decoder.decode();
+
+  if (remaining) {
+    fullResponse += remaining;
+    onChunk(fullResponse);
+  }
+
+
   return fullResponse;
 };
-
 
 // ============================================================
 // REGENERATE AI RESPONSE
@@ -267,6 +274,14 @@ export const regenerateResponseStream = async (
 
     fullResponse += chunk;
 
+    onChunk(fullResponse);
+  }
+
+
+  const remaining = decoder.decode();
+
+  if (remaining) {
+    fullResponse += remaining;
     onChunk(fullResponse);
   }
 
@@ -381,7 +396,12 @@ export const editMessageStream = async (
 
     onChunk(fullResponse);
   }
+  const remaining = decoder.decode();
 
+  if (remaining) {
+    fullResponse += remaining;
+    onChunk(fullResponse);
+  }
 
   return fullResponse;
 };

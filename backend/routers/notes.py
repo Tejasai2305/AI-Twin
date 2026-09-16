@@ -859,10 +859,7 @@ def edit_message_stream(
     # Update existing user message
     # --------------------------------------------------------
 
-    update_existing_user_message(
-        request.user_message_id,
-        question_text,
-    )
+
 
     # --------------------------------------------------------
     # Recreate Question object
@@ -898,6 +895,11 @@ def edit_message_stream(
 
             yield assistant_text
 
+            update_existing_user_message(
+                request.user_message_id,
+                question_text,
+            )
+
             update_existing_assistant_message(
                 assistant_message_id,
                 assistant_text,
@@ -929,14 +931,18 @@ def edit_message_stream(
                 yield chunk
 
             # ------------------------------------------------
-            # Update existing assistant message
+            # Update existing messages
             # ------------------------------------------------
+
+            update_existing_user_message(
+                request.user_message_id,
+                question_text,
+            )
 
             update_existing_assistant_message(
                 assistant_message_id,
                 full_answer,
             )
-
             print(
                 "Edited response generated successfully."
             )

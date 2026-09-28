@@ -1,0 +1,15 @@
+fastapi==0.139.0
+uvicorn==0.51.0
+pydantic==2.13.4
+python-dotenv==1.2.2
+google-genai==2.12.1
+faiss-cpu==1.14.3
+PyMuPDF==1.28.0
+numpy==2.2.6
+tavily-python==0.7.27
+python-multipart
+bcrypt==4.2.1
+pyjwt==2.10.1
+psycopg2-binary==2.9.10
+pytest==8.3.4
+httpx==0.28.1

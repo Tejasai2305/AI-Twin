@@ -1,0 +1,36 @@
+# Render Blueprint (render.com/docs/blueprint-spec)
+#
+# One concrete deployment example, not the only supported option -
+# the app is provider-neutral (see Procfile + DEPLOYMENT.md for
+# Railway/Fly.io equivalents). To use: push this repo to Render as a
+# Blueprint, or create the services manually using these settings.
+
+databases:
+  - name: ai-twin-db
+    plan: free
+    databaseName: ai_twin
+    user: ai_twin
+
+services:
+  - type: web
+    name: ai-twin-backend
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /healthz
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ai-twin-db
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: AI_TWIN_DATA_DIR
+        value: /opt/render/project/data

@@ -1,4 +1,4 @@
-import sqlite3
+﻿import sqlite3
 import os
 from pathlib import Path
 
@@ -127,10 +127,34 @@ def create_table():
     conn.commit()
     conn.close()
 
+    migrate_users_table()
     migrate_memories_table()
     migrate_conversations_table()
     migrate_attachments_table()
 
+
+def migrate_users_table():
+    """Additive migration for password-reset fields."""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("PRAGMA table_info(users)")
+    existing_columns = {row[1] for row in cursor.fetchall()}
+
+    columns_to_add = {
+        "reset_token_hash": "TEXT",
+        "reset_token_expires_at": "TIMESTAMP",
+    }
+
+    for column, definition in columns_to_add.items():
+        if column not in existing_columns:
+            cursor.execute(
+                f"ALTER TABLE users ADD COLUMN {column} {definition}"
+            )
+            print(f"[migration] added users.{column}")
+
+    conn.commit()
+    conn.close()
 
 def migrate_attachments_table():
     """
@@ -231,3 +255,4 @@ def migrate_memories_table():
 if __name__ == "__main__":
     create_table()
     print("Database and tables created successfully.")
+

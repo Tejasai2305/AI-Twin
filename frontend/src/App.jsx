@@ -13,6 +13,7 @@ import DashboardPanel from "./components/DashboardPanel";
 import InsightsPanel from "./components/InsightsPanel";
 import DecisionSupportPanel from "./components/DecisionSupportPanel";
 import AuthGate from "./components/AuthGate";
+import ResetPassword from "./components/ResetPassword";
 import Header from "./components/Header";
 import ToolStatus from "./components/ToolStatus";
 
@@ -935,6 +936,10 @@ function App() {
   // UI
   // ==========================================================
 
+  if (window.location.pathname === "/reset-password") {
+    return <ResetPassword />;
+  }
+
   if (!authChecked) {
     return null;
   }
@@ -1095,6 +1100,7 @@ function App() {
 
 
 export default App;
+
 
 
 

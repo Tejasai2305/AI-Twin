@@ -1,5 +1,9 @@
-from fastapi import FastAPI
+﻿from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from backend.routers.conversations import router as conversations_router
 from backend.routers.notes import router as notes_router
@@ -26,7 +30,16 @@ from backend.embeddings.memory_vector_store import (
 
 app = FastAPI()
 
-import os
+from starlette.middleware.sessions import SessionMiddleware
+
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.getenv("JWT_SECRET_KEY", "dev-only-insecure-secret-change-me"),
+    same_site="lax",
+    https_only=False,
+    session_cookie="ai_twin_session",
+)
+
 
 # -----------------------------
 # CORS
@@ -127,3 +140,5 @@ def healthz():
     return {
         "status": "ok"
     }
+
+

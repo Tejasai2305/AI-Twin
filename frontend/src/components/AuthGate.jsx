@@ -1,4 +1,5 @@
 ﻿import { useState } from "react";
+import { API_BASE_URL } from "../services/httpClient";
 import {
   signup,
   login,
@@ -83,7 +84,51 @@ function AuthGate({ onAuthenticated, onSkip }) {
               : "Reset your AI Twin password."}
         </p>
 
-        <form onSubmit={submit}>
+        {mode === "login" && (
+  <>
+    <button
+      type="button"
+      onClick={() => {
+        window.location.href = `${API_BASE_URL}/auth/google/login`;
+      }}
+      style={{
+        width: "100%",
+        padding: "12px",
+        borderRadius: "8px",
+        border: "1px solid #555",
+        background: "#ffffff",
+        color: "#222",
+        fontSize: "15px",
+        fontWeight: "500",
+        cursor: "pointer",
+        marginBottom: "18px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "10px",
+      }}
+    >
+      <span style={{ fontSize: "18px", fontWeight: "700" }}>G</span>
+      Continue with Google
+    </button>
+
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "12px",
+        marginBottom: "18px",
+        color: "#777",
+        fontSize: "12px",
+      }}
+    >
+      <span style={{ flex: 1, height: "1px", background: "#555" }} />
+      <span>OR</span>
+      <span style={{ flex: 1, height: "1px", background: "#555" }} />
+    </div>
+  </>
+)}
+<form onSubmit={submit}>
           {isForgot ? (
             <input
               type="email"
@@ -297,3 +342,6 @@ function AuthGate({ onAuthenticated, onSkip }) {
 }
 
 export default AuthGate;
+
+
+

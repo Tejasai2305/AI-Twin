@@ -144,6 +144,7 @@ def migrate_users_table():
     columns_to_add = {
         "reset_token_hash": "TEXT",
         "reset_token_expires_at": "TIMESTAMP",
+        "google_id": "TEXT",
     }
 
     for column, definition in columns_to_add.items():
@@ -152,6 +153,8 @@ def migrate_users_table():
                 f"ALTER TABLE users ADD COLUMN {column} {definition}"
             )
             print(f"[migration] added users.{column}")
+
+    cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id)")
 
     conn.commit()
     conn.close()
@@ -255,4 +258,16 @@ def migrate_memories_table():
 if __name__ == "__main__":
     create_table()
     print("Database and tables created successfully.")
+
+
+
+
+
+
+
+
+
+
+
+
 

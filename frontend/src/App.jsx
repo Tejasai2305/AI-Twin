@@ -26,7 +26,7 @@ import {
   editMessageStream,
   regenerateResponseStream,
 } from "./services/api";
-import { isLoggedIn, logout, getMe } from "./services/authApi";
+import { isLoggedIn, logout, getMe, setToken } from "./services/authApi";
 
 
 function App() {
@@ -64,6 +64,26 @@ function App() {
   // ==========================================================
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const googleToken = params.get("google_token");
+
+    if (googleToken) {
+      setToken(googleToken);
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      getMe()
+        .then((res) => {
+          setCurrentUser(res.data);
+          setAuthenticated(true);
+        })
+        .catch(() => {
+          logout();
+        })
+        .finally(() => setAuthChecked(true));
+
+      return;
+    }
+
     if (!isLoggedIn()) {
       setAuthChecked(true);
       return;
@@ -1100,6 +1120,9 @@ function App() {
 
 
 export default App;
+
+
+
 
 
 

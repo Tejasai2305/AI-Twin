@@ -66,3 +66,63 @@ def get_user_by_id(user_id: int):
         return None
 
     return {"id": row[0], "username": row[1], "email": row[2], "created_at": row[3]}
+
+def get_or_create_google_user(google_id: str, email: str, name: str):
+    from backend.database.database import get_connection
+
+    email = email.strip().lower()
+    name = (name or "").strip()
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT id, username, email FROM users WHERE google_id = ?",
+        (google_id,),
+    )
+    row = cursor.fetchone()
+
+    if row:
+        conn.close()
+        return {"id": row[0], "username": row[1], "email": row[2]}
+
+    cursor.execute(
+        "SELECT id, username, email FROM users WHERE LOWER(email) = ?",
+        (email,),
+    )
+    row = cursor.fetchone()
+
+    if row:
+        cursor.execute(
+            "UPDATE users SET google_id = ? WHERE id = ?",
+            (google_id, row[0]),
+        )
+        conn.commit()
+        conn.close()
+        return {"id": row[0], "username": row[1], "email": row[2]}
+
+    base_username = name or email.split("@")[0]
+    username = base_username[:50]
+
+    cursor.execute(
+        "SELECT id FROM users WHERE username = ?",
+        (username,),
+    )
+
+    if cursor.fetchone():
+        username = f"{base_username[:40]}_{email.split('@')[0][-8:]}"
+        username = username[:50]
+
+    cursor.execute(
+        """
+        INSERT INTO users(username, email, password_hash, google_id)
+        VALUES (?, ?, ?, ?)
+        """,
+        (username, email, "", google_id),
+    )
+
+    conn.commit()
+    user_id = cursor.lastrowid
+    conn.close()
+
+    return {"id": user_id, "username": username, "email": email}

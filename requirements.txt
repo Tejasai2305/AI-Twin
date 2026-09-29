@@ -14,3 +14,7 @@ psycopg2-binary==2.9.10
 pytest==8.3.4
 httpx==0.28.1
 resend==2.48.0
+
+authlib==1.8.0
+
+itsdangerous==2.2.0
